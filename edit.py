@@ -7,7 +7,8 @@
 # /set plugins.var.python.edit.editor "vim -f"
 #
 # History:
-# 10-18-2015
+# 07-07-2017
+# Version 1.1.0: Update editor to send multiline message
 # Version 1.0.1: Add configurable editor key
 # Version 1.0.0: initial release
 
@@ -15,6 +16,31 @@ import os
 import os.path
 import subprocess
 import weechat
+
+def encode_to_utf8(data):
+    if isinstance(data, unicode):
+        return data.encode('utf-8')
+    if isinstance(data, bytes):
+        return data
+    elif isinstance(data, collections.Mapping):
+        return dict(map(encode_to_utf8, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+        return type(data)(map(encode_to_utf8, data))
+    else:
+        return data
+
+
+def decode_from_utf8(data):
+    if isinstance(data, bytes):
+        return data.decode('utf-8')
+    if isinstance(data, unicode):
+        return data
+    elif isinstance(data, collections.Mapping):
+        return dict(map(decode_from_utf8, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+        return type(data)(map(decode_from_utf8, data))
+    else:
+        return data
 
 
 def edit(data, current_buffer, args):
