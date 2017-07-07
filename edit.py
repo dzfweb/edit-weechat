@@ -31,7 +31,7 @@ def edit(data, buf, args):
         return weechat.WEECHAT_RC_ERROR
 
     with open(path) as f:
-        text = f.read()
+        text = "```\n" + f.read() + "\n```"
         weechat.buffer_set(buf, "input", text)
         weechat.buffer_set(buf, "input_pos", str(len(text)))
 
