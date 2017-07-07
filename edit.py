@@ -7,8 +7,7 @@
 # /set plugins.var.python.edit.editor "vim -f"
 #
 # History:
-# 07-07-2017
-# Version 1.1.0: Update editor to send multiline message
+# 10-18-2015
 # Version 1.0.1: Add configurable editor key
 # Version 1.0.0: initial release
 
@@ -17,70 +16,27 @@ import os.path
 import subprocess
 import weechat
 
-def encode_to_utf8(data):
-    if isinstance(data, unicode):
-        return data.encode('utf-8')
-    if isinstance(data, bytes):
-        return data
-    elif isinstance(data, collections.Mapping):
-        return dict(map(encode_to_utf8, data.iteritems()))
-    elif isinstance(data, collections.Iterable):
-        return type(data)(map(encode_to_utf8, data))
-    else:
-        return data
 
-
-def decode_from_utf8(data):
-    if isinstance(data, bytes):
-        return data.decode('utf-8')
-    if isinstance(data, unicode):
-        return data
-    elif isinstance(data, collections.Mapping):
-        return dict(map(decode_from_utf8, data.iteritems()))
-    elif isinstance(data, collections.Iterable):
-        return type(data)(map(decode_from_utf8, data))
-    else:
-        return data
-
-
-def edit(data, current_buffer, args):
-    data = decode_from_utf8(data)
-    args = decode_from_utf8(args)
-    e = EVENTROUTER
-    team = e.weechat_controller.buffers[current_buffer].team
-    args = args.split(' ')
-    extension = "md"
-    backticks = False
-    channel = e.weechat_controller.buffers[current_buffer]
-    if len(args) > 1:
-        if args[1].startswith('#'):
-            channel = team.channels[team.get_channel_map()[args[1][1:]]]
-        else:
-            extension = args[1]
-            backticks = True
-            if len(args) > 2 and args[2].startswith('#'):
-                channel = team.channels[team.get_channel_map()[args[2][1:]]]
-
+def edit(data, buf, args):
     editor = (weechat.config_get_plugin("editor") or
               os.environ.get("EDITOR", "vim -f"))
-    path = os.path.expanduser("~/.weechat/slack_edit." + extension)
+    path = os.path.expanduser("~/.weechat/message.txt")
     open(path, "w+")
 
     cmd = editor.split() + [path]
     code = subprocess.Popen(cmd).wait()
     if code != 0:
         os.remove(path)
-        weechat.command(current_buffer, "/window refresh")
+        weechat.command(buf, "/window refresh")
         return weechat.WEECHAT_RC_ERROR
 
     with open(path) as f:
         text = f.read()
-        if backticks:
-            text = "```\n" + text.strip() + "\n```"
-        channel.send_message(text)
+        weechat.buffer_set(buf, "input", text)
+        weechat.buffer_set(buf, "input_pos", str(len(text)))
 
     os.remove(path)
-    weechat.command(current_buffer, "/window refresh")
+    weechat.command(buf, "/window refresh")
 
     return weechat.WEECHAT_RC_OK
 
